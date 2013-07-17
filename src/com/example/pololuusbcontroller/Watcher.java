@@ -3,7 +3,13 @@ package com.example.pololuusbcontroller;
 import java.util.Date;
 
 import android.util.Log;
-
+/**
+ * The watcher is a security assistant. It's in charge of turning off the drone engine if no
+ * signal has been received for a certain amount of time. A watcher instantiate a new thread that is waiting
+ * most of the time. After every command received, the current timestamp must be sent to the watcher.
+ * @author Cédric Andreolli - Intel Corporation
+ *
+ */
 public class Watcher{
 	private static Watcher instance = null;
 	public final static long MAX_TIME = 5000;

@@ -12,7 +12,11 @@ import android.view.WindowManager;
 import android.widget.EditText;
 
 import com.example.pololuusbcontroller3gserver.R;
-
+/**
+ * This activity display the settings.
+ * @author Cédric Andreolli - Intel Corporation
+ *
+ */
 public class SettingsActivity extends Activity{
 
 	private void loadSettings(){

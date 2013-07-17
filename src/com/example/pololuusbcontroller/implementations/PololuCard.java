@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2013, Cédric Andreolli. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
@@ -29,7 +29,7 @@ import android.hardware.usb.UsbManager;
 import android.util.Log;
 
 /**
- * CLass representing a Pololu card.
+ * Class representing a Pololu card.
  * @author Cédric Andreolli - Intel Corporation
  *
  */
@@ -40,63 +40,10 @@ public class PololuCard {
 	 * @author Cédric Andreolli - Intel Corporation
 	 *
 	 */
-	public enum PololuCardType{MICRO_MAESTRO, 
-		MINI_MAESTRO_12, 
-		MINI_MAESTRO_18, 
+	public enum PololuCardType{MICRO_MAESTRO,
+		MINI_MAESTRO_12,
+		MINI_MAESTRO_18,
 		MINI_MAESTRO_24};
-		//Reference to the USB connection
-		private UsbDeviceConnection connection;
-		//Reference to the USB manager
-		private UsbManager usbManager;
-		//Reference to the USB device
-		private UsbDevice device;
-		//The list of servo motors  
-		private List<Servo> servoList;
-
-		/**
-		 * Default constructor (private)
-		 * To create a new instance of this class, use the {@link createCard(Context context, PololuCardType type) createCard} method.
-		 * @param context The android context
-		 * @param servoNumber The number of servos
-		 * @throws InterruptedException
-		 */
-		private PololuCard(Context context, int servoNumber){
-			servoList = new ArrayList<Servo>();//Instantiate the list
-			//Retrieve the USB manager
-			usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
-			for(UsbDevice device : usbManager.getDeviceList().values()){
-				//There is only one USB device plugged
-				this.device = device;
-				break;
-			}
-			//Open the connection
-			connection = usbManager.openDevice(this.device);
-			createServos(servoNumber);
-			init();
-		}
-		
-		/**
-		 * Must be called to initialize the servo motors.
-		 */
-		private void init() {
-			try{
-				for(Servo s : servoList)
-					s.init();
-			}catch(Exception e){
-				Log.e("server", "Error while initializing servo...");
-			}
-		}
-
-		/**
-		 * Creates the servos regarding the servoNumber parameter.
-		 * @param servoNumber The number of servo motors on the card.
-		 */
-		private void createServos(int servoNumber) {
-			for(int i=0; i<servoNumber; i++){
-				servoList.add(new Servo(i, connection));
-			}
-		}
-
 		/**
 		 * Create a Pololu card regarding the Android context and the card type.
 		 * @param context The Android context.
@@ -104,7 +51,7 @@ public class PololuCard {
 		 * @return A new Pololu card.
 		 * @throws InterruptedException
 		 */
-		public static PololuCard createCard(Context context, PololuCardType type) 
+		public static PololuCard createCard(Context context, PololuCardType type)
 				throws InterruptedException{
 			switch(type){
 			case MICRO_MAESTRO:
@@ -119,6 +66,55 @@ public class PololuCard {
 				return new PololuCard(context, 6);
 			}
 		}
+		//Reference to the USB connection
+		private UsbDeviceConnection connection;
+		//Reference to the USB device
+		private UsbDevice device;
+		//The list of servo motors
+		private List<Servo> servoList;
+
+		//Reference to the USB manager
+		private UsbManager usbManager;
+
+		/**
+		 * Default constructor (private)
+		 * To create a new instance of this class, use the {@link createCard(Context context, PololuCardType type) createCard} method.
+		 * @param context The android context
+		 * @param servoNumber The number of servos
+		 * @throws InterruptedException
+		 */
+		private PololuCard(Context context, int servoNumber){
+			this.servoList = new ArrayList<Servo>();//Instantiate the list
+			//Retrieve the USB manager
+			this.usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
+			for(UsbDevice device : this.usbManager.getDeviceList().values()){
+				//There is only one USB device plugged
+				this.device = device;
+				break;
+			}
+			//Open the connection
+			this.connection = this.usbManager.openDevice(this.device);
+			this.createServos(servoNumber);
+			this.init();
+		}
+
+		/**
+		 * Change the acceleration of the motor.
+		 * @param acceleration The acceleration.
+		 * @param channel The servo motor position.
+		 */
+		public void changeAcceleration(int acceleration, int channel){
+			this.servoList.get(channel).setAcceleration(acceleration);
+		}
+
+		/**
+		 * Change the speed of the motor.
+		 * @param speed The speed.
+		 * @param channel The servo motor position.
+		 */
+		public void changeSpeed(int speed, int channel){
+			this.servoList.get(channel).setSpeed(speed);
+		}
 
 		/**
 		 * Change the position of the servo motor identified by the number channel.
@@ -131,24 +127,28 @@ public class PololuCard {
 			tar /= 100;
 			tar *= 1400;
 			tar +=800;
-			servoList.get(channel).setPosition((int)tar);
+			this.servoList.get(channel).setPosition((int)tar);
 		}
 
 		/**
-		 * Change the speed of the motor.
-		 * @param speed The speed.
-		 * @param channel The servo motor position.
+		 * Creates the servos regarding the servoNumber parameter.
+		 * @param servoNumber The number of servo motors on the card.
 		 */
-		public void changeSpeed(int speed, int channel){
-			servoList.get(channel).setSpeed(speed);
+		private void createServos(int servoNumber) {
+			for(int i=0; i<servoNumber; i++){
+				this.servoList.add(new Servo(i, this.connection));
+			}
 		}
 
 		/**
-		 * Change the acceleration of the motor.
-		 * @param acceleration The acceleration.
-		 * @param channel The servo motor position.
+		 * Must be called to initialize the servo motors.
 		 */
-		public void changeAcceleration(int acceleration, int channel){
-			servoList.get(channel).setAcceleration(acceleration);
+		private void init() {
+			try{
+				for(Servo s : this.servoList)
+					s.init();
+			}catch(Exception e){
+				Log.e("server", "Error while initializing servo...");
+			}
 		}
 }

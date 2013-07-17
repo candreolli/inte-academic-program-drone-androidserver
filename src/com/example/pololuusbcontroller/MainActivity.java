@@ -15,7 +15,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.TextureView;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
@@ -23,88 +22,86 @@ import android.widget.FrameLayout;
 import com.example.pololuusbcontroller.implementations.PololuCard;
 import com.example.pololuusbcontroller.implementations.PololuCard.PololuCardType;
 import com.example.pololuusbcontroller3gserver.R;
-
+/**
+ * The drone server main activity. This activity displays the camera preview and is in charge managing
+ * the server. The server sends the camera stream over the network and receive commands from the
+ * remote.
+ * @author Cédric Andreolli - Intel Corporation
+ *
+ */
 public class MainActivity extends Activity {
+	/**
+	 * Returns the main camera.
+	 * @return The main camera if it exists.
+	 */
 	public static Camera getCameraInstance()
 	{
 		Camera c = null;
-
-		try
-		{
-			Log.i("server", "Number of cameras : "+Camera.getNumberOfCameras());
-
+		try {
 			c = Camera.open(0);
-
 			Parameters p = c.getParameters();
 			p.setPictureFormat(ImageFormat.JPEG);
 			c.setParameters(p);
-
-			if(c!=null)
-				Log.i("server", "CAMERA FOUND");
-		}
-		catch(Exception e){}
+		}catch(Exception e){}
 		return c;
 	}
-	private Camera mCamera = null;
-	private CameraPreview mPreview = null;
-
-	private TextureView mTextureView;
+	/**
+	 * The camera.
+	 */
+	private Camera camera = null;
+	/**
+	 * The camera preview.
+	 */
+	private CameraPreview cameraPreview = null;
+	/**
+	 * The server.
+	 */
 	private Server server = null;
+
+	/**
+	 * Launches a service that restart the application if it happens
+	 * to be killed by an unpredictable event.
+	 */
+	private void launchRestartService() {
+		Intent intent = new Intent();
+		intent.setAction("3GControllerService");
+		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		this.startService(intent);
+	}
 
 
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		/**
+		 * This view displays the camera preview. For this reason, we prefer to use the landscape
+		 * orientation. We also display the camera preview in complete full screen. This means that
+		 * we need to remove the title bar.
+		 */
 		this.requestWindowFeature(Window.FEATURE_NO_TITLE);
 		this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-
-
 		this.setContentView(R.layout.activity_main);
 
-
-		Log.i("server", "Before Intent");
-		Intent intent = new Intent();
-		intent.setAction("3GControllerService");
-		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		this.startService(intent);
-		Log.i("server", "After intent");
-
+		this.launchRestartService();
 
 		Settings settings = Settings.getInstance(this);
-
-		NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-		//		NdefRecord record = NdefRecord.createUri("http://"+Utils.getLocalIpAddress()+"/"+
-		//				settings.getCommandPort()+"/"+settings.getVideoPort());
-
-		Log.i("server","IP Address : "+settings.getIPAddress());
-		NdefRecord record = NdefRecord.createUri("http://"+settings.getIPAddress()+"/"+
-				settings.getCommandPortRemote()+"/"+settings.getVideoPortRemote());
-
-		NdefMessage message = new NdefMessage(new NdefRecord[]{record});
-		nfcAdapter.setNdefPushMessage(message, this);
+		this.registerPushURI(settings);
 
 		try {
-
-			this.mCamera = getCameraInstance();
-			if(this.mCamera!=null)
-				Log.i("server", "CAMERA IS NOT NULL");
-			this.mPreview = new CameraPreview(this, this.mCamera);
+			this.camera = getCameraInstance();
+			this.cameraPreview = new CameraPreview(this, this.camera);
 			FrameLayout preview = (FrameLayout) this.findViewById(R.id.IDCameraPreview);
-			preview.addView(this.mPreview);
-
+			preview.addView(this.cameraPreview);
 			final PololuCard card = PololuCard.createCard(this, PololuCardType.MICRO_MAESTRO);
-
-
-			this.server = new Server(settings.getCommandPortDrone(), settings.getVideoPortDrone(), card, this.mPreview);
+			this.server = new Server(settings.getCommandPortDrone(), settings.getVideoPortDrone(), card, this.cameraPreview);
 			this.server.start();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	@Override
@@ -117,54 +114,60 @@ public class MainActivity extends Activity {
 	public boolean onMenuItemSelected(int featureId, MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.action_settings:
-			Intent intent = new Intent(this, SettingsActivity.class);
-			this.startActivity(intent);
+			Intent intentSettings = new Intent(this, SettingsActivity.class);
+			this.startActivity(intentSettings);
 			return true;
 		case R.id.action_main_activity:
-			Intent intent2 = new Intent(this, MainActivity.class);
+			Intent intentMainActivity = new Intent(this, MainActivity.class);
 			try {
 				this.server.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			this.startActivity(intent2);
+			this.startActivity(intentMainActivity);
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
 		}
 	}
 
-
 	public void onPause()
 	{
 		super.onPause();
-		this.mCamera.stopPreview();
+		this.camera.stopPreview();
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-
-		this.mCamera.startPreview();
+		this.camera.startPreview();
 	}
 
 	@Override
 	protected void onStop() {
 		super.onStop();
-
 		try {
 			this.server.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		try{
-			this.mCamera.stopPreview();
-			//this.releaseCamera();
-		}catch(Exception e){
-
-		}
+			this.camera.stopPreview();
+		}catch(Exception e){}
 	}
 
-
-
+	/**
+	 * Register a NFC push message. The message contains a string with the ip of the central
+	 * server and the communications ports used by the remote. This message allows
+	 * the remote to be automatically reconfigured on the fly.
+	 * @param settings The settings.
+	 */
+	private void registerPushURI(Settings settings) {
+		NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(this);
+		Log.i("server","IP Address : "+settings.getIPAddress());
+		NdefRecord record = NdefRecord.createUri("http://"+settings.getIPAddress()+"/"+
+				settings.getCommandPortRemote()+"/"+settings.getVideoPortRemote());
+		NdefMessage message = new NdefMessage(new NdefRecord[]{record});
+		nfcAdapter.setNdefPushMessage(message, this);
+	}
 }

@@ -8,12 +8,16 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Date;
 
 import android.util.Log;
 
 import com.example.pololuusbcontroller.implementations.PololuCard;
-
+/**
+ * The server is the elements that manage communications with the remote.
+ * 
+ * @author Cédric Andreolli - Intel Corporation
+ *
+ */
 public class Server extends Thread{
 	/**
 	 * The index of the command.
@@ -50,25 +54,25 @@ public class Server extends Thread{
 	 */
 	private Socket clientVideo = null;
 
+	/**
+	 * Is the server running ?
+	 */
 	private boolean isRunning = true;
-
+	/**
+	 * The break value remember the last Y position sent by the remote.
+	 */
 	private int lastBreakValue = 100;
-
-	private Date lastCommand = null;
-
+	/**
+	 * The last position of the left servo motor. It shouldn't be here but due to bad performances
+	 * on 3G, it is more secure to manage this on the server side.
+	 */
 	private int lastPositionLeft = 0;
-
-
+	/**
+	 * The last position of the right servo motor. It shouldn't be here but due to bad performances
+	 * on 3G, it is more secure to manage this on the server side.
+	 */
 	private int lastPositionRight = 0;
 
-	/**
-	 * The command port.
-	 */
-	private int portCommand;
-	/**
-	 * The video port.
-	 */
-	private int portVideo;
 	/**
 	 * The server socket handling the commands.
 	 */
@@ -100,6 +104,8 @@ public class Server extends Thread{
 						Log.i("server", "command received : "+command);
 						Server.this.cameraPreview.takeAPicture(callback);
 						synchronized (Server.this.cameraPreview) {
+							//When takeAPicture is called, the current thread is put in waiting state
+							//It will be awakend when the picture has been received by the client.
 							Server.this.cameraPreview.wait();
 						}
 					}
@@ -125,12 +131,9 @@ public class Server extends Thread{
 	 * @throws IOException
 	 */
 	public Server(int commandPort, int videoPort, PololuCard card, CameraPreview cameraPreview) throws IOException {
-		this.portCommand = commandPort;
-		this.portVideo = videoPort;
 		this.card = card;
 		this.isRunning = true;
 		this.cameraPreview = cameraPreview;
-		this.lastCommand = new Date();
 		this.init();
 	}
 	/**
@@ -166,6 +169,7 @@ public class Server extends Thread{
 	 * @return The command has been successfully sent to the pololu card.
 	 */
 	public synchronized boolean executeCommand(String[] fullCommand) {
+		//It important to send a tick to the watcher.
 		this.watcher.tick();
 		int value = 0;
 		int servo = 0;
@@ -178,6 +182,13 @@ public class Server extends Thread{
 		}
 
 		if(fullCommand[COMMAND].equals("MOVE")){
+			/**
+			 * The following solution is not elegant but for safety reasons, it's a good solution.
+			 * Some commands need to act on 2 servo motors. This means that 2 commands must be sent through the network.
+			 * If one of the command is delayed because of network lag, the result can be very bad. This is why
+			 * we must check which motor must be used. If we try to use the motor number 1 (one of the motion control command), we
+			 * also need to interact with motor 2. The motor 3 is used to set the speed of the propeller engine.
+			 */
 			if(servo == 1){
 				if(value < 50){
 					this.lastPositionLeft = value;
@@ -206,15 +217,29 @@ public class Server extends Thread{
 
 		return false;
 	}
+
+	/**
+	 * 
+	 * @return The client command socket.
+	 */
 	public Socket getClientCommand() {
 		return this.clientCommand;
 	}
 
-
+	/**
+	 * 
+	 * @return The client video socket.
+	 */
 	public Socket getClientVideo() {
 		return this.clientVideo;
 	}
 
+	/**
+	 * Handles the request. This method parses the string retrieved on the socket and separate each
+	 * component. Once each component are identified, this method execute the request.
+	 * @param line The string retrieved from the socket.
+	 * @return The request has been correctly executed.
+	 */
 	private boolean handleRequest(String line) {
 		String[] fullCommand = line.split(";");
 
@@ -223,6 +248,10 @@ public class Server extends Thread{
 		return this.executeCommand(fullCommand);
 	}
 
+	/**
+	 * Initialize the server. This step allows the server to close all open sockets.
+	 * @throws IOException
+	 */
 	public void init() throws IOException{
 		Log.i("server", "init() called");
 		if(this.serverSocketCommands != null){
@@ -235,37 +264,23 @@ public class Server extends Thread{
 				this.serverSocketVideoStream.close();
 			this.serverSocketVideoStream = null;
 		}
-
-		//		try {
-		//			Log.i("server", "Creating the server socket");
-		//			//serverSocketCommands = new ServerSocket(commandPort);
-		//			this.serverSocketCommands = new ServerSocket();
-		//			this.serverSocketCommands.setReuseAddress(true);
-		//			this.serverSocketCommands.bind(new InetSocketAddress(this.portCommand));
-		//
-		//			//serverSocketVideoStream = new ServerSocket(videoPort);
-		//			this.serverSocketVideoStream = new ServerSocket();
-		//			this.serverSocketVideoStream.setReuseAddress(true);
-		//			this.serverSocketVideoStream.bind(new InetSocketAddress(this.portVideo));
-		//
-		//			Log.i("server", "Server socket created");
-		//		} catch (Exception e) {
-		//			Log.i("server", "Exception : "+e.getMessage());
-		//			e.printStackTrace();
-		//		}
-
 	}
+
+	/**
+	 * 
+	 * @return Is the server running ?
+	 */
 	public synchronized boolean isRunning() {
 		return this.isRunning;
 	}
+
 	@Override
 	public void run() {
+		//Retrieve the watcher.
 		this.watcher = Watcher.getWatcher(this);
-
+		//Start the video streaming process.
 		Thread t = new Thread(this.videoRunnable);
 		t.start();
-
-
 
 		while(this.isRunning()){
 			try {
@@ -285,8 +300,6 @@ public class Server extends Thread{
 						writer.write("FAIL\r\n");
 					writer.flush();
 				}
-				Log.i("server", "Nothing to do");
-
 			} catch (Exception e) {
 				Log.e("server", "Error Thread command:  "+e.getMessage());
 				e.printStackTrace();
@@ -296,12 +309,9 @@ public class Server extends Thread{
 		this.watcher.setRunning(false);
 	}
 
-
-
 	public void setClientCommand(Socket clientCommand) {
 		this.clientCommand = clientCommand;
 	}
-
 
 	public void setClientVideo(Socket clientVideo) {
 		this.clientVideo = clientVideo;
