@@ -33,10 +33,12 @@ public final class R {
         public static final int IDCommandR_Text=0x7f0a0002;
         public static final int IDIP=0x7f0a0001;
         public static final int IDIPAddress_Text=0x7f0a0006;
+        public static final int IDInvert_controls_Checkbox=0x7f0a0007;
+        public static final int IDTime_between_screenshots_Input=0x7f0a0008;
         public static final int IDVideoD_Text=0x7f0a0005;
         public static final int IDVideoR_Text=0x7f0a0004;
-        public static final int action_main_activity=0x7f0a0007;
-        public static final int action_settings=0x7f0a0008;
+        public static final int action_main_activity=0x7f0a0009;
+        public static final int action_settings=0x7f0a000a;
     }
     public static final class layout {
         public static final int activity_main=0x7f030000;
@@ -52,8 +54,10 @@ public final class R {
         public static final int command_port_drone=0x7f060005;
         public static final int command_port_remote=0x7f060007;
         public static final int hello_world=0x7f060002;
+        public static final int invert_controls=0x7f06000a;
         public static final int ip_address=0x7f060009;
         public static final int settings_title=0x7f060008;
+        public static final int time_between_screenshots=0x7f06000b;
         public static final int video_port_drone=0x7f060004;
         public static final int video_port_remote=0x7f060006;
     }

@@ -9,6 +9,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.CheckBox;
 import android.widget.EditText;
 
 import com.example.pololuusbcontroller3gserver.R;
@@ -39,6 +40,12 @@ public class SettingsActivity extends Activity{
 
 		EditText commandPortRET = (EditText) this.findViewById(R.id.IDCommandR_Text);
 		commandPortRET.setText(settings.getCommandPortRemote()+"");
+
+		EditText timeBetweenScreenshotsET = (EditText) this.findViewById(R.id.IDTime_between_screenshots_Input);
+		timeBetweenScreenshotsET.setText(settings.getTimeBetweenScreenshots()+"");
+
+		CheckBox switchServoDirectionC = (CheckBox) this.findViewById(R.id.IDInvert_controls_Checkbox);
+		switchServoDirectionC.setChecked(settings.getSwitchServoDirection());
 	}
 
 	protected void onCreate(Bundle savedInstanceState) {
@@ -107,10 +114,14 @@ public class SettingsActivity extends Activity{
 		EditText commandPortRET = (EditText) this.findViewById(R.id.IDCommandR_Text);
 		EditText videoPortRET = (EditText) this.findViewById(R.id.IDVideoR_Text);
 		EditText ipAddressET = (EditText) this.findViewById(R.id.IDIPAddress_Text);
+		EditText timeBetweenScreenshotsTE = (EditText) this.findViewById(R.id.IDTime_between_screenshots_Input);
+		CheckBox switchServoDirection = (CheckBox) this.findViewById(R.id.IDInvert_controls_Checkbox);
 		settings.setCommandPortDrone(Integer.parseInt(commandPortDET.getText().toString()));
 		settings.setVideoPortDrone(Integer.parseInt(videoPortDET.getText().toString()));
 		settings.setCommandPortRemote(Integer.parseInt(commandPortRET.getText().toString()));
 		settings.setVideoPortRemote(Integer.parseInt(videoPortRET.getText().toString()));
 		settings.setIPAddress(ipAddressET.getText().toString());
+		settings.setSwitchServoDirection(switchServoDirection.isChecked());
+		settings.setTimeBetweenScreenshots(Float.parseFloat(timeBetweenScreenshotsTE.getText().toString()));
 	}
 }

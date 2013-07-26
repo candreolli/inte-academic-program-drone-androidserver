@@ -11,5 +11,6 @@
     <string name="command_port_remote">Command port remote</string>
     <string name="settings_title">Settings</string>
 	<string name="ip_address">IP address</string>
-	
+	<string name="invert_controls">Switch Servo direction</string>
+	<string name="time_between_screenshots">Time between screenshots (s)</string>
 </resources>

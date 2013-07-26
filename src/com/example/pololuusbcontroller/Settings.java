@@ -15,13 +15,18 @@ public class Settings {
 	private static final int DEFAULT_COMMAND_PORT_DRONE_VALUE = 8800;
 	private static final int DEFAULT_COMMAND_PORT_REMOTE_VALUE = 8887;
 	private static final String DEFAULT_IP_ADDRESS = "82.225.152.198";
+	private static final boolean DEFAULT_SWITCH_SERVO_DIRECTION = false;
 	private static final int DEFAULT_VIDEO_PORT_DRONE_VALUE = 8801;
 	private static final int DEFAULT_VIDEO_PORT_REMOTE_VALUE = 8888;
 	private static Settings instance = null;
 	private static final String IP_ADDRESS = "ip_address";
 	public static final String PREF_SETTING = "setting_file";
+	private static final String SWITCH_SERVO_DIRECTION = "switch_servo_direction";
+	private static final String TIME_BETWEEN_SCREENSHOTS = "time_between_screenshots";
 	private static final String VIDEO_PORT_DRONE = "video_port_drone";
 	private static final String VIDEO_PORT_REMOTE = "video_port_remote";
+
+
 	/**
 	 * Access the singleton.
 	 * @param ctx The Android application context.
@@ -53,13 +58,24 @@ public class Settings {
 	 */
 	private SharedPreferences settings = null;
 	/**
+	 * Indicates that the servo don't work in the natural direction.
+	 */
+	private boolean switchServoDirection = false;
+	/**
+	 * Time in seconds between 2 screenshots
+	 */
+	private float timeBetweenScreenshots = 1;
+
+	/**
 	 * The video port used by the drone
 	 */
 	private int videoPortDrone = 0;
+
 	/**
 	 * The video port used by the remote.
 	 */
 	private int videoPortRemote = 0;
+
 	/**
 	 * Default constructor.
 	 * @param ctx The Android application context.
@@ -106,6 +122,21 @@ public class Settings {
 
 	/**
 	 * 
+	 * @return The state of switch servo direction
+	 */
+	public boolean getSwitchServoDirection() {
+		this.switchServoDirection = this.settings.getBoolean(SWITCH_SERVO_DIRECTION, DEFAULT_SWITCH_SERVO_DIRECTION);
+		return this.switchServoDirection;
+	}
+
+	public float getTimeBetweenScreenshots() {
+		this.timeBetweenScreenshots = this.settings.getFloat(TIME_BETWEEN_SCREENSHOTS, 1f);
+		Log.i("server", "loading float : "+this.timeBetweenScreenshots);
+		return this.timeBetweenScreenshots;
+	}
+
+	/**
+	 * 
 	 * @return The video port used by the drone.
 	 */
 	public int getVideoPortDrone() {
@@ -125,7 +156,6 @@ public class Settings {
 		}
 		return this.videoPortRemote;
 	}
-
 	/**
 	 * 
 	 * @param commandPort The command port used by the drone
@@ -135,7 +165,9 @@ public class Settings {
 		Editor editor = this.settings.edit();
 		editor.putInt(COMMAND_PORT_DRONE, commandPort);
 		editor.commit();
+		editor.apply();
 	}
+
 	/**
 	 * 
 	 * @param commandPort The command port used by the remote
@@ -145,6 +177,7 @@ public class Settings {
 		Editor editor = this.settings.edit();
 		editor.putInt(COMMAND_PORT_REMOTE, commandPort);
 		editor.commit();
+		editor.apply();
 	}
 
 	/**
@@ -157,6 +190,28 @@ public class Settings {
 		Editor editor = this.settings.edit();
 		editor.putString(IP_ADDRESS, ipAddress);
 		editor.commit();
+		editor.apply();
+	}
+
+	/**
+	 * 
+	 * @param videoPort The video port used by the drone
+	 */
+	public void setSwitchServoDirection(boolean dir) {
+		this.switchServoDirection = dir;
+		Editor editor = this.settings.edit();
+		editor.putBoolean(SWITCH_SERVO_DIRECTION, dir);
+		editor.commit();
+		editor.apply();
+	}
+
+	public void setTimeBetweenScreenshots(float timeBetweenScreenshots) {
+		Log.i("server", "saving float : "+timeBetweenScreenshots);
+		this.timeBetweenScreenshots = timeBetweenScreenshots;
+		Editor editor = this.settings.edit();
+		editor.putFloat(TIME_BETWEEN_SCREENSHOTS, timeBetweenScreenshots);
+		editor.commit();
+		editor.apply();
 	}
 
 	/**
@@ -168,6 +223,7 @@ public class Settings {
 		Editor editor = this.settings.edit();
 		editor.putInt(VIDEO_PORT_DRONE, videoPort);
 		editor.commit();
+		editor.apply();
 	}
 
 	/**
@@ -179,5 +235,6 @@ public class Settings {
 		Editor editor = this.settings.edit();
 		editor.putInt(VIDEO_PORT_REMOTE, videoPort);
 		editor.commit();
+		editor.apply();
 	}
 }

@@ -107,6 +107,7 @@ public class Server extends Thread{
 							//When takeAPicture is called, the current thread is put in waiting state
 							//It will be awakend when the picture has been received by the client.
 							Server.this.cameraPreview.wait();
+							Server.this.cameraPreview.wait((int)settings.getTimeBetweenScreenshots()*1000);
 						}
 					}
 
@@ -190,6 +191,9 @@ public class Server extends Thread{
 			 * also need to interact with motor 2. The motor 3 is used to set the speed of the propeller engine.
 			 */
 			if(servo == 1){
+				Settings settings = Settings.getInstance(this.cameraPreview.getContext());
+				if(settings.getSwitchServoDirection())
+					value = 100-value;
 				if(value < 50){
 					this.lastPositionLeft = value;
 					this.lastPositionRight = 50;
