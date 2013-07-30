@@ -211,6 +211,28 @@ public class Server extends Thread{
 				this.card.changeTarget(value, servo);
 			}
 			return true;
+		}else if(fullCommand[COMMAND].equals("MOVE_PERC")){
+			/**
+			 * The following solution is not elegant but for safety reasons, it's a good solution.
+			 * Some commands need to act on 2 servo motors. This means that 2 commands must be sent through the network.
+			 * If one of the command is delayed because of network lag, the result can be very bad. This is why
+			 * we must check which motor must be used. If we try to use the motor number 1 (one of the motion control command), we
+			 * also need to interact with motor 2. The motor 3 is used to set the speed of the propeller engine.
+			 */
+			Settings settings = Settings.getInstance(this.cameraPreview.getContext());
+			if(settings.getSwitchServoDirection())
+				value = 100-value;
+			/*	if(value < 50){
+				this.lastPositionLeft = value;
+				this.lastPositionRight = 50;
+			}else{
+				this.lastPositionLeft = 50;
+				this.lastPositionRight = value;
+			}*/
+			this.card.changeTarget(value, servo);
+			//	this.card.changeTarget(this.computePositionRight(), servo);
+
+			return true;
 		}else if(fullCommand[COMMAND].equals("SPEED")){
 			this.card.changeSpeed(value, servo);
 			return true;
