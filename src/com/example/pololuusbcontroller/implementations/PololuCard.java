@@ -28,6 +28,9 @@ import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.util.Log;
 
+import com.example.pololuusbcontroller.implementations.Servo.InterfaceType;
+import com.example.pololuusbcontroller.interfaces.IMessageSender;
+
 /**
  * Class representing a Pololu card.
  * @author Cédric Andreolli - Intel Corporation
@@ -51,27 +54,31 @@ public class PololuCard {
 		 * @return A new Pololu card.
 		 * @throws InterruptedException
 		 */
-		public static PololuCard createCard(Context context, PololuCardType type)
+		public static PololuCard createCard(Context context, PololuCardType type, InterfaceType itype)
 				throws InterruptedException{
 			switch(type){
 			case MICRO_MAESTRO:
-				return new PololuCard(context, 6);
+				return new PololuCard(context, 6, itype);
 			case MINI_MAESTRO_12:
-				return new PololuCard(context, 12);
+				return new PololuCard(context, 12, itype);
 			case MINI_MAESTRO_18:
-				return new PololuCard(context, 18);
+				return new PololuCard(context, 18, itype);
 			case MINI_MAESTRO_24:
-				return new PololuCard(context, 24);
+				return new PololuCard(context, 24, itype);
 			default:
-				return new PololuCard(context, 6);
+				return new PololuCard(context, 6, itype);
 			}
 		}
 		//Reference to the USB connection
 		private UsbDeviceConnection connection;
 		//Reference to the USB device
 		private UsbDevice device;
+		IMessageSender messageSender;
+
 		//The list of servo motors
 		private List<Servo> servoList;
+
+		private InterfaceType type;
 
 		//Reference to the USB manager
 		private UsbManager usbManager;
@@ -83,17 +90,21 @@ public class PololuCard {
 		 * @param servoNumber The number of servos
 		 * @throws InterruptedException
 		 */
-		private PololuCard(Context context, int servoNumber){
+		private PololuCard(Context context, int servoNumber, InterfaceType itype){
 			this.servoList = new ArrayList<Servo>();//Instantiate the list
-			//Retrieve the USB manager
-			this.usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
-			for(UsbDevice device : this.usbManager.getDeviceList().values()){
-				//There is only one USB device plugged
-				this.device = device;
+			this.type = itype;
+			switch (this.type) {
+			case USB:
+				this.messageSender = new USBMessageSender(context);
+				break;
+			case BLUETOOTH:
+				this.messageSender = new BluetoothMessageSender();
+				break;
+			default:
+				this.messageSender = new BluetoothMessageSender();
 				break;
 			}
-			//Open the connection
-			this.connection = this.usbManager.openDevice(this.device);
+
 			this.createServos(servoNumber);
 			this.init();
 		}
@@ -123,11 +134,7 @@ public class PololuCard {
 		 * @param channel The servo motor position.
 		 */
 		public void changeTarget(int target, int channel){
-			double tar = target;
-			tar /= 100;
-			tar *= 1400;
-			tar +=800;
-			this.servoList.get(channel).setPosition((int)tar);
+			this.servoList.get(channel).setPosition(target);
 		}
 
 		/**
@@ -136,7 +143,7 @@ public class PololuCard {
 		 */
 		private void createServos(int servoNumber) {
 			for(int i=0; i<servoNumber; i++){
-				this.servoList.add(new Servo(i, this.connection));
+				this.servoList.add(new Servo(i, this.messageSender));
 			}
 		}
 

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2013, Cédric Andreolli. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
@@ -18,61 +18,60 @@
  */
 package com.example.pololuusbcontroller.implementations;
 
-import android.hardware.usb.UsbDeviceConnection;
-
 import com.example.pololuusbcontroller.interfaces.ICommands;
+import com.example.pololuusbcontroller.interfaces.IMessageSender;
 /**
  * Represents a servo motor.
  * @author Cédric Andreolli - Intel Corporation
  *
  */
 public class Servo implements ICommands{
+	public enum InterfaceType{BLUETOOTH, USB}
+	/**
+	 * The usb device connection.
+	 */
+	private IMessageSender messageSender;
 	/**
 	 * The position of the servo on the card.
 	 */
-	private int num;
-	/**
-	 * The usb device connection. 
-	 */
-	private UsbDeviceConnection connection;
-	
+	private int num;;
 	/**
 	 * The default constructor.
 	 * @param num The position of the servo motor on the card.
 	 * @param connection The usb device connection.
 	 */
-	Servo(int num, UsbDeviceConnection connection){
+	Servo(int num, IMessageSender messageSender){
 		this.num = num;
-		this.connection = connection;
-	}
-	
-	/**
-	 * Set the position of the servo motor.
-	 */
-	public void setPosition(int position) {
-		connection.controlTransfer(0x40, 0x85, position*4, num, null, 0, 5000);
+		this.messageSender = messageSender;
 	}
 
 	/**
-	 * Set the speed of the servo motor.
+	 * Initialize the servo motor. The init method set the speed and the acceleration to 0.
 	 */
-	public void setSpeed(int speed) {
-		connection.controlTransfer(0x40, 0x84, speed, num, null, 0, 5000);
+	public void init() {
+		this.setSpeed(0);
+		this.setAcceleration(0);
 	}
 
 	/**
 	 * Set the acceleration of the servo motor.
 	 */
 	public void setAcceleration(int acceleration) {
-		connection.controlTransfer(0x40, 0x84, acceleration, num | 0x80, null, 0, 5000);
+		this.messageSender.sendSetAcceleration(this.num, acceleration);
 	}
 
 	/**
-	 * Initialize the servo motor. The init method set the speed and the acceleration to 0. 
+	 * Set the position of the servo motor.
 	 */
-	public void init() {
-		setSpeed(0);
-		setAcceleration(0);
+	public void setPosition(int position) {
+		this.messageSender.sendSetPosition(this.num, position);
+	}
+
+	/**
+	 * Set the speed of the servo motor.
+	 */
+	public void setSpeed(int speed) {
+		this.messageSender.sendSetSpeed(this.num, speed);
 	}
 
 }

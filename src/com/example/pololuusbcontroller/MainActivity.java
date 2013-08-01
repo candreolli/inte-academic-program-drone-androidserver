@@ -3,6 +3,7 @@ package com.example.pololuusbcontroller;
 import java.io.IOException;
 
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.ImageFormat;
@@ -21,6 +22,7 @@ import android.widget.FrameLayout;
 
 import com.example.pololuusbcontroller.implementations.PololuCard;
 import com.example.pololuusbcontroller.implementations.PololuCard.PololuCardType;
+import com.example.pololuusbcontroller.implementations.Servo.InterfaceType;
 import com.example.pololuusbcontroller3gserver.R;
 /**
  * The drone server main activity. This activity displays the camera preview and is in charge managing
@@ -58,6 +60,12 @@ public class MainActivity extends Activity {
 	 */
 	private Server server = null;
 
+	private boolean isBluetoothAvailable(){
+		return BluetoothAdapter.getDefaultAdapter().getBondedDevices().size()>0;
+	}
+
+
+
 	/**
 	 * Launches a service that restart the application if it happens
 	 * to be killed by an unpredictable event.
@@ -68,8 +76,6 @@ public class MainActivity extends Activity {
 		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		this.startService(intent);
 	}
-
-
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -94,7 +100,12 @@ public class MainActivity extends Activity {
 			this.cameraPreview = new CameraPreview(this, this.camera);
 			FrameLayout preview = (FrameLayout) this.findViewById(R.id.IDCameraPreview);
 			preview.addView(this.cameraPreview);
-			final PololuCard card = PololuCard.createCard(this, PololuCardType.MICRO_MAESTRO);
+			PololuCard card;
+			if(this.isBluetoothAvailable())
+				card = PololuCard.createCard(this, PololuCardType.MICRO_MAESTRO, InterfaceType.BLUETOOTH);
+			else
+				card = PololuCard.createCard(this, PololuCardType.MICRO_MAESTRO, InterfaceType.USB);
+
 			this.server = new Server(settings.getCommandPortDrone(), settings.getVideoPortDrone(), card, this.cameraPreview);
 			this.server.start();
 		} catch (InterruptedException e) {
