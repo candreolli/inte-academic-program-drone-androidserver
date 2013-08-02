@@ -18,7 +18,7 @@ public class BluetoothMessageSender implements IMessageSender  {
 	private OutputStream out;
 
 	public BluetoothMessageSender(){
-		Log.i("server", "BluetoothMessageSender constructor called                       ");
+		Log.i("server", "BluetoothMessageSender constructor called.");
 		BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 		BluetoothDevice bluetoothDevice = null;
 		if (mBluetoothAdapter != null) {
@@ -55,7 +55,22 @@ public class BluetoothMessageSender implements IMessageSender  {
 
 	@Override
 	public void sendSetAcceleration(int num, int acceleration) {
-
+		/**
+		 * Not tested
+		 */
+		byte [] serialBytes = new byte[6];
+		serialBytes[0] = (byte)0xAA;
+		serialBytes[1] = (byte)0;
+		serialBytes[2] = (byte)0x09;
+		serialBytes[3] = (byte)num;
+		serialBytes[4] = (byte)(acceleration & 0xFF);
+		serialBytes[5] = (byte)(acceleration >> 8 & 0xFF);
+		try {
+			this.out.write(serialBytes);
+			this.out.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -74,7 +89,22 @@ public class BluetoothMessageSender implements IMessageSender  {
 
 	@Override
 	public void sendSetSpeed(int num, int speed) {
-
+		/**
+		 * Not tested
+		 */
+		byte [] serialBytes = new byte[6];
+		serialBytes[0] = (byte)0xAA;
+		serialBytes[1] = (byte)0;
+		serialBytes[2] = (byte)0x07;
+		serialBytes[3] = (byte)num;
+		serialBytes[4] = (byte)(speed & 0xFF);
+		serialBytes[5] = (byte)(speed >> 8 & 0xFF);
+		try {
+			this.out.write(serialBytes);
+			this.out.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 }
